@@ -131,16 +131,19 @@ Status LightBulb::Init() {
 
 void LightBulb::SetOutputState(const char *source) {
   LOG(LL_INFO,
-      ("state: %s, brightness: %i, hue: %i, saturation: %i",
-       OnOff(cfg_->state), cfg_->brightness, cfg_->hue, cfg_->saturation));
+      ("state: %s, brightness: %i, hue: %i, saturation: %i, color_temperature: %i",
+       OnOff(cfg_->state), cfg_->brightness, cfg_->hue, cfg_->saturation, cfg_->color_temperature));
 
   float brv = cfg_->state ? (cfg_->brightness / 100.0) : 0;
 
-  float a = brv;
-  float b = brv;
+  float per = 1.0 / (370 - 150) * (cfg_->color_temperature - 150);
 
-  out_->SetStatePWM(a, source);
-  FindOutput(2)->SetStatePWM(b, source);
+  float ww = per;
+  float cw = 1.0 - per;
+
+  out_->SetStatePWM(ww * brv, source);
+  auto o = new OutputPin(2, 5, 1);
+  o->SetStatePWM(cw * brv, source);
 
   if (cfg_->state && cfg_->auto_off) {
     auto_off_timer_.Reset(cfg_->auto_off_delay * 1000, 0);
@@ -155,7 +158,7 @@ void LightBulb::SetOutputState(const char *source) {
 
 StatusOr<std::string> LightBulb::GetInfo() const {
   const_cast<LightBulb *>(this)->SaveState();
-  return mgos::SPrintf("sta: %s, b: %i, h: %i, sa: %i 11111", OnOff(cfg_->state),
+  return mgos::SPrintf("sta: %s, b: %i, h: %i, sa: %i", OnOff(cfg_->state),
                        cfg_->brightness, cfg_->hue, cfg_->saturation);
 }
 
@@ -263,7 +266,6 @@ HAPError LightBulb::HandleOnWrite(HAPAccessoryServerRef *server,
   cfg_->state = value;
   dirty_ = true;
   SetOutputState("HAP");
-  state_notify_chars_[0]->RaiseEvent();
   (void) server;
   (void) request;
   return kHAPError_None;
@@ -285,7 +287,6 @@ HAPError LightBulb::HandleBrightnessWrite(
   LOG(LL_INFO, ("Brightness %d: %d", id(), value));
   cfg_->brightness = value;
   dirty_ = true;
-  state_notify_chars_[1]->RaiseEvent();
   SetOutputState("HAP");
   (void) server;
   (void) request;
@@ -309,7 +310,6 @@ HAPError LightBulb::HandleHueWrite(HAPAccessoryServerRef *server,
   if (cfg_->hue != (int) value) {
     cfg_->hue = value;
     dirty_ = true;
-    state_notify_chars_[2]->RaiseEvent();
     SetOutputState("HAP");
   } else {
     LOG(LL_INFO, ("no Hue update"));
@@ -336,7 +336,6 @@ HAPError LightBulb::HandleSaturationWrite(
   if (cfg_->saturation != (int) value) {
     cfg_->saturation = value;
     dirty_ = true;
-    state_notify_chars_[3]->RaiseEvent();
     SetOutputState("HAP");
   } else {
     LOG(LL_INFO, ("no Saturation update"));
@@ -363,7 +362,7 @@ HAPError LightBulb::HandleColorTemperatureWrite(
   if (cfg_->color_temperature != (int) value) {
     cfg_->color_temperature = value;
     dirty_ = true;
-    state_notify_chars_[4]->RaiseEvent();
+    state_notify_chars_[2]->RaiseEvent();
     SetOutputState("HAP");
   } else {
     LOG(LL_INFO, ("no ColorTemperature update"));
