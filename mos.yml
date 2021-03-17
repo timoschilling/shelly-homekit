@@ -104,6 +104,7 @@ config_schema:
   - ["lb.state", "b", false, {title: "State of the light"}]
   - ["lb.brightness", "i", 100, {title: "Brightness of the light"}]
   - ["lb.saturation", "i", 100, {title: "Saturation of the light"}]
+  - ["lb.color_temperature", "i", 100, {title: "ColorTemperature of the light"}]
   - ["lb.initial_state", "i", 2, {title: "Initial state on power-on: 0 - off, 1 - on, 2 - restore last state"}]
   - ["lb.auto_off", "b", false, {title: "Whether the switch should automatically turn OFF after turning ON"}]
   - ["lb.auto_off_delay", "d", 0, {title: "Delay for automatically turning OFF, in seconds"}]
@@ -498,6 +499,31 @@ conds:
         - ["shelly.name", "shellyvintage-??????"]
         - ["wifi.ap.ssid", "shellyvintage-??????"]
         - ["lb1", "lb", {title: "Light bulb settings"}]
+
+  - when: build_vars.MODEL == "ShellyDuo"
+    apply:
+      name: bulbduo # To allow OTA from stock fw.
+      libs:
+        - origin: https://github.com/mongoose-os-libs/mongoose
+          variant: esp8266-nossl
+      build_vars:
+        FLASH_SIZE: 2097152
+        FS_SIZE: 262144
+        BOOT_CONFIG_ADDR: 0x7000  # To be compatible with stock firmware.
+        MGOS_ROOT_FS_TYPE: SPIFFS
+      cdefs:
+        PRODUCT_HW_REV: '"1.0"'
+        STOCK_FW_MODEL: '"SHBDUO-1"'
+        # We don't use SSL, HomeKit uses its own crypto. This saves ~120K.
+        MG_ENABLE_SSL: 0
+        MIN_COLOR_TEMPERATURE_VALUE: 150 # ROUND(1000000 / 6500)
+        MAX_COLOR_TEMPERATURE_VALUE: 370 # ROUND(1000000 / 2700)
+      config_schema:
+        - ["device.id", "shellyduo-??????"]
+        - ["shelly.name", "shellyduo-??????"]
+        - ["wifi.ap.ssid", "shellyduo-??????"]
+        - ["lb1", "lb", {title: "Light bulb settings"}]
+        - ["lb1.color_temperature", 200, {title: "Must be in range of MIN/MAX_COLOR_TEMPERATURE_VALUE"}]
 
   - when: mos.platform != "ubuntu"
     apply:

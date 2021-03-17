@@ -91,7 +91,15 @@ class LightBulb : public Component, public mgos::hap::Service {
   HAPError HandleSaturationWrite(
       HAPAccessoryServerRef *server,
       const HAPUInt32CharacteristicWriteRequest *request, uint32_t value);
-};
 
+  HAPError HandleColorTemperatureRead(
+      HAPAccessoryServerRef *server,
+      const HAPUInt32CharacteristicReadRequest *request, uint32_t *value);
+
+  HAPError HandleColorTemperatureWrite(
+      HAPAccessoryServerRef *server,
+      const HAPUInt32CharacteristicWriteRequest *request, uint32_t value);
+
+};
 }  // namespace hap
 }  // namespace shelly

@@ -116,6 +116,15 @@ Status LightBulb::Init() {
   //     kHAPCharacteristicDebugDescription_Saturation);
   // state_notify_chars_.push_back(saturation_char);
   // AddChar(saturation_char);
+  // Saturation
+  auto *color_temperature_char = new mgos::hap::UInt32Characteristic(
+      iid++, &kHAPCharacteristicType_ColorTemperature, 150, 370, 1,
+      std::bind(&LightBulb::HandleColorTemperatureRead, this, _1, _2, _3),
+      true /* supports_notification */,
+      std::bind(&LightBulb::HandleColorTemperatureWrite, this, _1, _2, _3),
+      kHAPCharacteristicDebugDescription_ColorTemperature);
+  state_notify_chars_.push_back(color_temperature_char);
+  AddChar(color_temperature_char);
 
   return Status::OK();
 }
@@ -127,7 +136,11 @@ void LightBulb::SetOutputState(const char *source) {
 
   float brv = cfg_->state ? (cfg_->brightness / 100.0) : 0;
 
-  out_->SetStatePWM(brv, source);
+  float a = brv;
+  float b = brv;
+
+  out_->SetStatePWM(a, source);
+  FindOutput(2)->SetStatePWM(b, source);
 
   if (cfg_->state && cfg_->auto_off) {
     auto_off_timer_.Reset(cfg_->auto_off_delay * 1000, 0);
@@ -327,6 +340,33 @@ HAPError LightBulb::HandleSaturationWrite(
     SetOutputState("HAP");
   } else {
     LOG(LL_INFO, ("no Saturation update"));
+  }
+  (void) server;
+  (void) request;
+  return kHAPError_None;
+}
+
+HAPError LightBulb::HandleColorTemperatureRead(
+    HAPAccessoryServerRef *server,
+    const HAPUInt32CharacteristicReadRequest *request, uint32_t *value) {
+  LOG(LL_INFO, ("HandleColorTemperatureRead"));
+  *value = cfg_->color_temperature;
+  (void) server;
+  (void) request;
+  return kHAPError_None;
+}
+
+HAPError LightBulb::HandleColorTemperatureWrite(
+    HAPAccessoryServerRef *server,
+    const HAPUInt32CharacteristicWriteRequest *request, uint32_t value) {
+  LOG(LL_INFO, ("ColorTemperature %d: %i", id(), (int) value));
+  if (cfg_->color_temperature != (int) value) {
+    cfg_->color_temperature = value;
+    dirty_ = true;
+    state_notify_chars_[4]->RaiseEvent();
+    SetOutputState("HAP");
+  } else {
+    LOG(LL_INFO, ("no ColorTemperature update"));
   }
   (void) server;
   (void) request;
