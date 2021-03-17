@@ -97,6 +97,17 @@ config_schema:
   - ["rgb.auto_off", "b", false, {title: "Whether the switch should automatically turn OFF after turning ON"}]
   - ["rgb.auto_off_delay", "d", 0, {title: "Delay for automatically turning OFF, in seconds"}]
 
+  - ["lb", "o", {title: "Light bulb settings", abstract: true}]
+  - ["lb.name", "s", "Light bulb", {title: "Accessory name"}]
+  - ["lb.enable", "b", true, {title: "Enable this light bulb in the accessory"}]
+  - ["lb.hue", "i", 0, {title: "Hue of the light"}]
+  - ["lb.state", "b", false, {title: "State of the light"}]
+  - ["lb.brightness", "i", 100, {title: "Brightness of the light"}]
+  - ["lb.saturation", "i", 100, {title: "Saturation of the light"}]
+  - ["lb.initial_state", "i", 2, {title: "Initial state on power-on: 0 - off, 1 - on, 2 - restore last state"}]
+  - ["lb.auto_off", "b", false, {title: "Whether the switch should automatically turn OFF after turning ON"}]
+  - ["lb.auto_off_delay", "d", 0, {title: "Delay for automatically turning OFF, in seconds"}]
+
   # Preserved from stock.
   - ["k_apparent", "i", 1750000, {}]
   - ["max_power", "i", 1800, {}]
@@ -465,6 +476,28 @@ conds:
         - ["in1", "in", {title: "Input 1 settings"}]
         - ["in1.ssw.name", "Shelly SSW1"]
         - ["in1.sensor.name", "Shelly S1"]
+
+  - when: build_vars.MODEL == "ShellyVintage"
+    apply:
+      name: bulb6w # To allow OTA from stock fw.
+      libs:
+        - origin: https://github.com/mongoose-os-libs/mongoose
+          variant: esp8266-nossl
+      build_vars:
+        FLASH_SIZE: 2097152
+        FS_SIZE: 262144
+        BOOT_CONFIG_ADDR: 0x7000  # To be compatible with stock firmware.
+        MGOS_ROOT_FS_TYPE: SPIFFS
+      cdefs:
+        PRODUCT_HW_REV: '"1.0"'
+        STOCK_FW_MODEL: '"SHVIN-1"'
+        # We don't use SSL, HomeKit uses its own crypto. This saves ~120K.
+        MG_ENABLE_SSL: 0
+      config_schema:
+        - ["device.id", "shellyvintage-??????"]
+        - ["shelly.name", "shellyvintage-??????"]
+        - ["wifi.ap.ssid", "shellyvintage-??????"]
+        - ["lb1", "lb", {title: "Light bulb settings"}]
 
   - when: mos.platform != "ubuntu"
     apply:
