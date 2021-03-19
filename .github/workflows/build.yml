@@ -31,5 +31,6 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.model }}
-          path: build_${{ matrix.model }}/objs/fw_temp
+          # path: build_${{ matrix.model }}/objs/fw_temp
+          path: build_${{ matrix.model }}/fw.zip
           if-no-files-found: error
