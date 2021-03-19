@@ -5,6 +5,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        model:
+          - Shelly1
+          - Shelly1L
+          - Shelly1PM
+          - Shelly25
+          - Shelly2
+          - ShellyI3
+          - ShellyPlug
+          - ShellyPlugS
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -15,12 +26,10 @@ jobs:
           sudo add-apt-repository ppa:mongoose-os/mos -y
           sudo apt -q install mos -y
       - name: Build project
-        run: make release RELEASE_SUFFIX=$(.github/version.py --suffix)
+        run: make ${{ matrix.model }}
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: releases
-          path: |
-            releases/*
-            !releases/**/elf
+          name: ${{ matrix.model }}
+          path: build_${{ matrix.model }}/objs/fw_temp
           if-no-files-found: error
