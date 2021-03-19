@@ -34,3 +34,4 @@ jobs:
           # path: build_${{ matrix.model }}/objs/fw_temp
           path: build_${{ matrix.model }}/fw.zip
           if-no-files-found: error
+      - run: md5sum build_${{ matrix.model }}/fw.zip
